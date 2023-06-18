@@ -1,2 +1,21 @@
 ---
 # tasks file for example
+
+- name: Include installation tasks
+  ansible.builtin.include_tasks:
+    file: installation.yml
+
+- name: Include directory tasks
+  ansible.builtin.include_tasks:
+    file: directories.yml
+
+- name: Include certbot tasks
+  ansible.builtin.include_tasks:
+    file: certbot.yml
+    apply:
+      tags:
+        - certificate
+
+- name: Include configuration tasks
+  ansible.builtin.include_tasks:
+    file: configuration.yml

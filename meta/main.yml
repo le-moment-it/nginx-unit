@@ -1,10 +1,13 @@
 galaxy_info:
-  role_name: nginx-unit
-  author: your name
+  author: Le Moment IT
   description: This role installs and configure nginx unit
   company: your company (optional)
-  license: MIT
+  license: Apache 2.0
   min_ansible_version: 2.1
+  role_name: nginx_unit
+  namespace: le_moment_it
   galaxy_tags: []
+  platforms:
+    - Debian
 
 dependencies: []

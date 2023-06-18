@@ -1,0 +1,36 @@
+- name: Check if the certificate is already created
+  ansible.builtin.stat:
+    path: "{{ nginx_unit_certbot_certificates_folder }}/{{ certificate.key }}"
+  become: true
+  register: file
+
+- name: Temporary configuration to generate certificate
+  ansible.builtin.uri:
+    url: http://localhost/config
+    unix_socket: /var/run/control.unit.sock
+    method: PUT
+    body_format: json
+    status_code:
+      - 200
+    body: "{{ nginx_certbot_unit_configuration }}"
+  become: true
+  changed_when: true
+  when: not file.stat.exists
+
+- name: Generate Let's encrypt certificate
+  ansible.builtin.shell:
+      certbot certonly --webroot -w /certbot_challenge/ -d {{ certificate.key }} {% for name in certificate.value.subject_alternative_names %} -d {{ name }} {% endfor %} --non-interactive --agree-tos -m {{ nginx_unit_certbot_email_address }}
+  args:
+    executable: /bin/bash
+  become: true
+  changed_when: true
+  when: not file.stat.exists
+
+- name: Concatenation & upload to nginx unit API
+  ansible.builtin.shell: |
+    cat /etc/letsencrypt/live/{{ certificate.key }}/fullchain.pem /etc/letsencrypt/live/{{ certificate.key }}/privkey.pem > /tmp/{{ certificate.key }}.pem && curl -X PUT --data-binary @/tmp/{{ certificate.key }}.pem --unix-socket /var/run/control.unit.sock http://localhost/config http://localhost/certificates/{{ certificate.key }}
+  args:
+    executable: /bin/bash
+  become: true
+  changed_when: true
+  when: not file.stat.exists

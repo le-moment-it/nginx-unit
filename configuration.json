@@ -1,0 +1,53 @@
+{
+    "listeners": {
+        "*:80": {
+            "pass": "routes/http"
+        },
+        "*:443": {
+            "pass": "routes/main",
+            "tls": {
+                "certificate": "unit.stream.vasseurlaurent.com"
+            }
+        }
+    },
+    "access_log": {
+        "path": "/var/log/unit_access.log",
+        "format": "{\"message\":\"$request_line\",\"level\":200,\"level_name\":\"INFO\",\"channel\":\"access_log\",\"datetime\":\"$time_local\",\"extra\":{\"url\":\"$uri\",\"ip\":\"$remote_addr\",\"http_method\":\"$method\",\"server\":\"$host\",\"referrer\":\"$header_referer\",\"user_agent\":\"$header_user_agent\",\"status\":\"$status\"}}"
+    },
+    "applications": {
+        "python": {
+            "type": "python",
+            "module": "asgi",
+            "callable": "app",
+            "path": "/www/data/prod"
+        }
+    },
+    "routes": {
+        "main": [
+            {
+                "action": {
+                    "pass": "applications/python"
+                }
+            }
+        ],
+        "http": [
+            {
+                "match": {
+                    "uri": "/.well-known/acme-challenge/*"
+                },
+                "action": {
+                    "share": "/certbot_challenge/$uri"
+                }
+            },
+            {
+                "match": {
+                    "scheme": "http"
+                },
+                "action": {
+                    "location": "https://unit.stream.vasseurlaurent.com/",
+                    "return": 301
+                }
+            }
+        ]
+    }
+}

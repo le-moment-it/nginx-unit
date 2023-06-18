@@ -1,0 +1,46 @@
+- name: Create certbot challenge directory
+  ansible.builtin.file:
+    path: "{{ nginx_unit_cerbot_challenge_directory }}"
+    state: directory
+    mode: 0755
+    owner: unit
+    group: unit
+  become: true
+
+- name: Install certbot
+  ansible.builtin.apt:
+    name: certbot
+    state: present
+  become: true
+
+- name: Create certificate
+  ansible.builtin.include_tasks:
+    file: certificates.yml
+    apply:
+      tags:
+        - certificate
+  with_dict: "{{ nginx_unit_certbot_certificates }}"
+  loop_control:
+    loop_var: certificate
+    extended: true
+
+- name: Create renew certificate
+  ansible.builtin.copy:
+    src: renew.sh
+    dest: "{{ nginx_state_directory }}/renew.sh"
+    owner: root
+    group: root
+    mode: 0700
+  become: true
+
+- name: Create Certbot cron for updating certificates
+  ansible.builtin.cron:
+    name: Update certificates
+    special_time: weekly
+    user: root
+    job: certbot renew --cert-name {{ certificate.key }} --post-hook "{{ nginx_state_directory }}/renew.sh {{  certificate.value.listener }}"
+  with_dict: "{{ nginx_unit_certbot_certificates }}"
+  loop_control:
+    loop_var: certificate
+    extended: true
+  become: true
