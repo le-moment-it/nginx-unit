@@ -1,0 +1,44 @@
+- name: Check if the key is already downloaded
+  ansible.builtin.stat:
+    path: "{{ nginx_unit_gpg_key_destination }}"
+  register: gpg
+
+- name: Download GPG nginx unit GPG key
+  ansible.builtin.uri:
+    url: "{{ nginx_unit_gpg_key_url }}"
+    dest: "{{ nginx_unit_gpg_key_destination }}"
+    mode: "0644"
+    owner: root
+    group: root
+  become: true
+  when: not gpg.stat.exists
+
+- name: Add nginx unit sources
+  ansible.builtin.apt_repository:
+    repo: "{{ item }}"
+    filename: unit
+  with_items: "{{ nginx_unit_apt_sources }}"
+  become: true
+
+- name: Install nginx unit
+  ansible.builtin.apt:
+    name: unit
+    state: present
+    update_cache: true
+  become: true
+
+- name: Install nginx units
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  become: true
+  with_items: "{{ nginx_unit_install }}"
+  notify:
+    - Restart nginx unit 
+
+- name: Install jq
+  ansible.builtin.apt:
+    name: jq
+    state: present
+  become: true

@@ -1,0 +1,10 @@
+---
+- name: Create applications directory
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+  with_items: "{{ nginx_unit_applications_directory }}"
+  become: true

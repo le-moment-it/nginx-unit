@@ -1,0 +1,45 @@
+---
+
+- name: Copy new configuration into tmp folder
+  ansible.builtin.copy:
+    dest: /tmp/unit.json
+    owner: root
+    group: root
+    mode: 0600
+    content: "{{ nginx_unit_configuration }}"
+  become: true
+  changed_when: false
+
+- name: Compare current and new configuration
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      jq --argfile a /tmp/unit.json --argfile b {{ nginx_state_directory }}/conf.json -n '($a | (.. | arrays) |= sort) as $a | ($b | (.. | arrays) |= sort) as $b | $a == $b'
+  args:
+    executable: /bin/bash
+  register: comparison
+  changed_when: false
+  become: true
+
+- name: Remove temporary 
+  ansible.builtin.file:
+    path: /tmp/unit.json
+    state: absent
+  become: true
+  changed_when: false
+
+- name: Force nginx unit restart
+  ansible.builtin.meta: flush_handlers
+
+- name: Configure Nginx unit
+  ansible.builtin.uri:
+    url: http://localhost/config
+    unix_socket: /var/run/control.unit.sock
+    method: PUT
+    body_format: json
+    status_code:
+      - 200
+    body: "{{ nginx_unit_configuration | to_json }}"
+  when: comparison.stdout == "false"
+  become: true
+  changed_when: true

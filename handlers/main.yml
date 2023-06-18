@@ -1,2 +1,8 @@
 ---
 # handlers file for example
+
+- name: Restart nginx unit
+  ansible.builtin.service:
+    name: unit
+    state: restarted
+  become: true

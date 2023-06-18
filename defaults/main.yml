@@ -1,2 +1,39 @@
 ---
 # defaults file for example
+nginx_unit_gpg_key_url: https://unit.nginx.org/keys/nginx-keyring.gpg # Nginx unit GPG key;string 
+nginx_unit_gpg_key_destination: /usr/share/keyrings/nginx-keyring.gpg # Nginx unit GPG folder;string
+nginx_unit_apt_sources: # Nginx unit sources;list
+  - deb [signed-by=/usr/share/keyrings/nginx-keyring.gpg] https://packages.nginx.org/unit/debian/ bullseye unit
+  - deb-src [signed-by=/usr/share/keyrings/nginx-keyring.gpg] https://packages.nginx.org/unit/debian/ bullseye unit
+
+nginx_unit_applications_directory: [] # Folder created to store applications
+nginx_unit_install: [] # List of units to install;list
+nginx_unit_configuration: # Configuration in json format;string
+nginx_state_directory: /var/lib/unit # Nginx unit state directory;string
+
+nginx_unit_cerbot_challenge_directory: /certbot_challenge # Certbot challenge folder, used to better manage certificates creation;string
+nginx_unit_certbot_certificates: [] # Certificates to create, check example;string
+nginx_unit_certbot_certificates_folder: /etc/letsencrypt/live/ # Default certbot folder;string
+nginx_unit_certbot_email_address: example@example.com # Email to register certificates;string
+
+
+nginx_certbot_unit_configuration: |
+  {
+      "listeners": {
+          "*:80": {
+              "pass": "routes/http"
+          }
+      },
+      "routes": {
+          "http": [
+              {
+                  "match": {
+                      "uri": "/.well-known/acme-challenge/*"
+                  },
+                  "action": {
+                      "share": "/certbot_challenge/$uri"
+                  }
+              }
+          ]
+      }
+  }
